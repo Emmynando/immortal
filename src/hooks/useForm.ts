@@ -28,10 +28,11 @@ const useForm = <IFormData>(InitialData: IFormData) => {
         });
         setMediaPreview(window.URL.createObjectURL(files[0]));
       }
+    } else if (type === "checkbox") {
+      const checked = (event.target as HTMLInputElement).checked;
+      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
-      setFormData((prevState) => {
-        return { ...prevState, [name]: value };
-      });
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
   //@ts-ignore

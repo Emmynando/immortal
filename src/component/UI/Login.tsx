@@ -1,8 +1,9 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import useForm from "../../hooks/useForm";
 import axios from "axios";
 import { FcGoogle } from "react-icons/fc";
-import { GoogleLogin } from "@react-oauth/google";
+import { useGoogleLogin } from "@react-oauth/google";
 import InputField from "./elements/InputFiels";
 import SubmitButton from "./elements/SubmitButton";
 const LOGINITEMS = [
@@ -25,42 +26,51 @@ const LOGINITEMS = [
 const baseUrl = "";
 
 export default function Login() {
+  const navigate = useNavigate();
   const { formData, handleChange } = useForm({
     email: "",
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleGoogleLogin(credentialResponse: any) {
-    console.log("Google login response:", credentialResponse);
-    setIsLoading(true);
+  // google login hook
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      console.log(tokenResponse);
+      setIsLoading(true);
+      try {
+        // Get user info from Google
+        const userInfo = await axios.get(
+          "https://www.googleapis.com/oauth2/v2/userinfo",
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          }
+        );
+        console.log(userInfo);
 
-    try {
-      const response = await axios.post(
-        `${baseUrl}/auth/google`,
-        {
-          googleToken: credentialResponse.credential,
-        },
-        {
-          withCredentials: true,
+        // Send to your backend
+        const response = await axios.post(
+          `${baseUrl}/auth/google`,
+          {
+            loginDeets: userInfo.data,
+          },
+          {
+            withCredentials: true,
+          }
+        );
+
+        if (response.status === 200) {
+          //  navigate
+          navigate("/dashboard", { replace: true });
         }
-      );
-
-      console.log("Backend response:", response.data);
-
-      if (response.status === 200) {
-        // Store user data or tokens as needed
-        localStorage.setItem("accessToken", response.data.accessToken);
-        // Redirect to dashboard or home page
-        // router.push("/dashboard");
+      } catch (error) {
+        console.error("Google login failed:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Google login failed:", error);
-      // Handle error (show toast, etc.)
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    },
+    onError: () => console.log("Login Failed"),
+  });
 
   async function handlePasswordLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -69,26 +79,24 @@ export default function Login() {
       return;
     }
     console.log(formData);
-    // setIsLoading(true);
-    // try {
-    //   const data = await axios.post(`${baseUrl}/auth`, formData, {
-    //     withCredentials: true,
-    //   });
-    //   console.log(data);
-    //   // store values in local storage
-    //   localStorage.setItem("userFormData", JSON.stringify(formData));
-    //   if (data.status !== 201) {
-    //     // if user does not exist
-    //     // redirect to registration page
-    //     router.push("/register");
-    //     return;
-    //   }
-
-    // } catch (error) {
-    //   console.log(error);
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    setIsLoading(true);
+    try {
+      const data = await axios.post(`${baseUrl}/auth`, formData, {
+        withCredentials: true,
+      });
+      console.log(data);
+      // store values in local storage
+      localStorage.setItem("userFormData", JSON.stringify(formData));
+      if (data.status !== 201) {
+        // if user does not exist
+        // redirect to registration page
+        navigate("/", { replace: true });
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -102,7 +110,14 @@ export default function Login() {
             Login to access your Immortal account
           </p>
           <div className="border rounded-md">
-            <GoogleLogin
+            <button
+              className="flex items-center justify-center gap-2 w-full px-2 py-1 cursor-pointer"
+              onClick={() => googleLogin()}
+            >
+              <FcGoogle className="size-[2rem]" />
+              <p className="font-normal">Continue with Google</p>
+            </button>
+            {/* <GoogleLogin
               onSuccess={handleGoogleLogin}
               onError={() => console.log("Google Login Failed")}
               useOneTap={false}
@@ -110,7 +125,7 @@ export default function Login() {
               size="large"
               width="100%"
               text="continue_with"
-            />
+            /> */}
           </div>
           <div className="flex items-center justify-center mt-2 w-1/2 mx-auto">
             <div className="flex-1 h-[1px] bg-[#bebebe]"></div>
@@ -124,7 +139,7 @@ export default function Login() {
                 <div key={field.id} className="w-full">
                   <label
                     className={`relative block uppercase tracking-wide text-black text-xs mt-3 font-medium`}
-                    htmlFor="name"
+                    htmlFor={field.name}
                   >
                     {field.formLabel}
                   </label>
@@ -160,6 +175,14 @@ export default function Login() {
                 {isLoading ? "loading..." : "Log in"}
               </SubmitButton>
             </form>
+            <div className="w-max mx-auto">
+              <p className="text-sm mt-2">
+                Don't have an account?{" "}
+                <Link to="/register" className="!underline !text-black">
+                  Create one for Free
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -177,3 +200,33 @@ export default function Login() {
 //               <FcGoogle className="size-[2rem]" />
 //               <p className="font-normal">Continue with Google</p>
 //             </button>
+
+//  async function handleGoogleLogin(credentialResponse: any) {
+//     console.log("Google login response:", credentialResponse);
+//     setIsLoading(true);
+
+//     try {
+//       const response = await axios.post(
+//         `${baseUrl}/auth/google`,
+//         {
+//           googleToken: credentialResponse.credential,
+//         },
+//         {
+//           withCredentials: true,
+//         }
+//       );
+
+//       console.log("Backend response:", response.data);
+
+//       if (response.status === 200) {
+//         // Store user data or tokens as needed
+//         localStorage.setItem("accessToken", response.data.accessToken);
+//         // Redirect to dashboard or home page
+//         navigate("/dashboard", { replace: true });
+//       }
+//     } catch (error) {
+//       console.error("Google login failed:", error);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   }

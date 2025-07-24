@@ -23,7 +23,7 @@ const LOGINITEMS = [
   },
 ];
 
-const baseUrl = "";
+const baseUrl = "http://localhost:3002";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -81,17 +81,17 @@ export default function Login() {
     console.log(formData);
     setIsLoading(true);
     try {
-      const data = await axios.post(`${baseUrl}/auth`, formData, {
+      const data = await axios.post(`${baseUrl}/auth/login`, formData, {
         withCredentials: true,
       });
       console.log(data);
       // store values in local storage
       localStorage.setItem("userFormData", JSON.stringify(formData));
       if (data.status !== 201) {
-        // if user does not exist
-        // redirect to registration page
-        navigate("/", { replace: true });
+        console.log("Error Login in");
+        return;
       }
+      navigate("/", { replace: true });
     } catch (error) {
       console.log(error);
     } finally {

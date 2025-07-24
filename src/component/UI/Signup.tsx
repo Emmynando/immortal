@@ -1,64 +1,27 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { useGoogleLogin } from "@react-oauth/google";
-import { FcGoogle } from "react-icons/fc";
 import useForm from "../../hooks/useForm";
 import InputField from "./elements/InputFiels";
 import { SIGNUPITEMS } from "../../constants/formItems";
 import SubmitButton from "./elements/SubmitButton";
 
-const baseUrl = "";
+const baseUrl = "http://localhost:3002";
+
 export default function SignUpPage() {
   const navigate = useNavigate();
   const { formData, handleChange } = useForm({
     email: "",
     password: "",
+    confirmPassword: "",
     firstName: "",
     lastName: "",
     phoneNumber: "",
     emergencyContact: "",
     privacyConsent: false,
   });
+  const [gender, setGender] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  // google login hook
-  const googleSignup = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      console.log(tokenResponse);
-      setIsLoading(true);
-      try {
-        // Get user info from Google
-        const userInfo = await axios.get(
-          "https://www.googleapis.com/oauth2/v2/userinfo",
-          {
-            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          }
-        );
-        console.log(userInfo);
-
-        // Send to your backend
-        const response = await axios.post(
-          `${baseUrl}/auth/google`,
-          {
-            loginDeets: userInfo.data,
-          },
-          {
-            withCredentials: true,
-          }
-        );
-
-        if (response.status === 200) {
-          //  navigate
-          navigate("/dashboard", { replace: true });
-        }
-      } catch (error) {
-        console.error("Google login failed:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onError: () => console.log("Login Failed"),
-  });
 
   async function handlePasswordSignUp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -67,20 +30,41 @@ export default function SignUpPage() {
       return;
     }
 
-    console.log(formData);
+    if (!formData.privacyConsent) {
+      console.log("Terms and Conditions needs to be accepted");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      console.log("Password do not match");
+      return;
+    }
+    if (formData.phoneNumber === formData.emergencyContact) {
+      console.log("Emergency Contact must be different");
+      return;
+    }
+
+    const unifiedFormData = {
+      ...formData,
+      email: formData.email.toLowerCase(),
+      firstName: formData.firstName.toUpperCase(),
+      lastName: formData.lastName.toUpperCase(),
+    };
+    console.log(gender);
     setIsLoading(true);
     try {
-      const data = await axios.post(`${baseUrl}/auth`, formData, {
-        withCredentials: true,
-      });
-      console.log(data);
-      // store values in local storage
-      localStorage.setItem("userFormData", JSON.stringify(formData));
+      const data = await axios.post(
+        `${baseUrl}/auth/signup`,
+        { ...unifiedFormData, gender },
+        {
+          withCredentials: true,
+        }
+      );
       if (data.status !== 201) {
-        // if user does not exist
-        // redirect to registration page
-        navigate("/", { replace: true });
+        console.log("Error creating user");
+        return;
       }
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       console.log(error);
     } finally {
@@ -96,15 +80,7 @@ export default function SignUpPage() {
             Get Started On Immortal
           </h2>
           <p className="text-sm text-[#7f7f7f] mb-4">Sign up to begin</p>
-          <div className="border rounded-md">
-            <button
-              className="flex items-center justify-center gap-2 w-full px-2 py-1 cursor-pointer"
-              onClick={() => googleSignup()}
-            >
-              <FcGoogle className="size-[2rem]" />
-              <p className="font-normal">Signup with Google</p>
-            </button>
-          </div>
+
           <div className="flex items-center justify-center mt-2 w-1/2 mx-auto">
             <div className="flex-1 h-[1px] bg-[#bebebe]"></div>
             <span className="px-[10px] mb-1">or</span>
@@ -139,6 +115,21 @@ export default function SignUpPage() {
                   </div>
                 );
               })}
+              <div>
+                <select
+                  value={gender}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setGender(e.target.value)
+                  }
+                >
+                  <option value="" disabled>
+                    Select Gender
+                  </option>
+
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
+              </div>
 
               <div className="w-full flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -163,7 +154,7 @@ export default function SignUpPage() {
             <div className="w-max mx-auto">
               <p className="text-sm mt-2">
                 Already have an account?{" "}
-                <Link to="/register" className="!underline !text-black">
+                <Link to="/login" className="!underline !text-black">
                   Login
                 </Link>
               </p>
@@ -171,9 +162,6 @@ export default function SignUpPage() {
           </div>
         </div>
       </section>
-
-      {/* second box */}
-      <section className="w-1/2 bg-red-900"></section>
     </main>
   );
 }

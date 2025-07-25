@@ -99,7 +99,6 @@ export default function Login() {
       console.log("Invalided form data");
       return;
     }
-    console.log(formData);
     setIsLoading(true);
     try {
       const data = await axios.post(`${baseUrl}/auth/login`, formData, {
@@ -204,41 +203,3 @@ export default function Login() {
     </main>
   );
 }
-
-//  <button
-//               className="flex items-center justify-center gap-2 w-full px-2 py-1 cursor-pointer"
-//               onClick={handleGoogleLogin}
-//             >
-//               <FcGoogle className="size-[2rem]" />
-//               <p className="font-normal">Continue with Google</p>
-//             </button>
-
-//  async function handleGoogleLogin(credentialResponse: any) {
-//     console.log("Google login response:", credentialResponse);
-//     setIsLoading(true);
-
-//     try {
-//       const response = await axios.post(
-//         `${baseUrl}/auth/google`,
-//         {
-//           googleToken: credentialResponse.credential,
-//         },
-//         {
-//           withCredentials: true,
-//         }
-//       );
-
-//       console.log("Backend response:", response.data);
-
-//       if (response.status === 200) {
-//         // Store user data or tokens as needed
-//         localStorage.setItem("accessToken", response.data.accessToken);
-//         // Redirect to dashboard or home page
-//         navigate("/dashboard", { replace: true });
-//       }
-//     } catch (error) {
-//       console.error("Google login failed:", error);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   }

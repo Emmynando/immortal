@@ -24,6 +24,8 @@ const LOGINITEMS = [
 ];
 
 const baseUrl = "http://localhost:3002";
+const clientid = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const client_secret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 
 export default function Login() {
   const navigate = useNavigate();
@@ -35,34 +37,53 @@ export default function Login() {
 
   // google login hook
   const googleLogin = useGoogleLogin({
+    flow: "auth-code",
     onSuccess: async (tokenResponse) => {
-      console.log(tokenResponse);
       setIsLoading(true);
       try {
         // Get user info from Google
-        const userInfo = await axios.get(
-          "https://www.googleapis.com/oauth2/v2/userinfo",
+        // Exchange authorization code for tokens
+        const tokenInfoResponse = await axios.post(
+          `https://oauth2.googleapis.com/token`,
+          new URLSearchParams({
+            client_id: clientid,
+            client_secret: client_secret,
+            code: tokenResponse.code,
+            grant_type: "authorization_code",
+            redirect_uri: window.location.origin,
+          }),
           {
-            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
           }
         );
-        console.log(userInfo);
 
-        // Send to your backend
+        if (!tokenInfoResponse.data.id_token) {
+          console.log("Error: No ID token received");
+          return;
+        }
+        if (!tokenInfoResponse.data.id_token) {
+          console.log("error fetching token Info");
+          return;
+        }
+
+        // Send to backend
         const response = await axios.post(
-          `${baseUrl}/auth/google`,
-          {
-            loginDeets: userInfo.data,
-          },
+          `${baseUrl}/auth/oauth/login/callback`,
+          { idToken: tokenInfoResponse.data.id_token },
+
           {
             withCredentials: true,
           }
         );
 
-        if (response.status === 200) {
-          //  navigate
-          navigate("/dashboard", { replace: true });
+        if (response.status !== 201) {
+          console.log("Error login in");
+          return;
         }
+        //  navigate
+        navigate("/dashboard", { replace: true });
       } catch (error) {
         console.error("Google login failed:", error);
       } finally {
@@ -117,15 +138,6 @@ export default function Login() {
               <FcGoogle className="size-[2rem]" />
               <p className="font-normal">Continue with Google</p>
             </button>
-            {/* <GoogleLogin
-              onSuccess={handleGoogleLogin}
-              onError={() => console.log("Google Login Failed")}
-              useOneTap={false}
-              theme="outline"
-              size="large"
-              width="100%"
-              text="continue_with"
-            /> */}
           </div>
           <div className="flex items-center justify-center mt-2 w-1/2 mx-auto">
             <div className="flex-1 h-[1px] bg-[#bebebe]"></div>

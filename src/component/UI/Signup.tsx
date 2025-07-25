@@ -50,7 +50,6 @@ export default function SignUpPage() {
       firstName: formData.firstName.toUpperCase(),
       lastName: formData.lastName.toUpperCase(),
     };
-    console.log(gender);
     setIsLoading(true);
     try {
       const data = await axios.post(
@@ -71,6 +70,18 @@ export default function SignUpPage() {
       setIsLoading(false);
     }
   }
+
+  const checkValidation = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    const isPhoneNumber = /^[0-9]+?$/.test(value);
+    if (name === "phoneNumber" || name === "emergencyContact") {
+      if (value === "" || (isPhoneNumber && value.trim().length <= 12)) {
+        handleChange(event);
+      }
+    } else {
+      handleChange(event);
+    }
+  };
 
   return (
     <main className=" p-2">
@@ -108,7 +119,7 @@ export default function SignUpPage() {
                       type={field.type}
                       placeholder={field.placeholder}
                       value={val as string | number}
-                      onChange={handleChange}
+                      onChange={checkValidation}
                       ringColorClass="focus:ring-green-900"
                       theme="dark"
                     />

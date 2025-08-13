@@ -1,3 +1,7 @@
 export default function HomePage() {
-  return <h2>Home Page</h2>;
+  return (
+    <div className="flex-1">
+      <h2>hdsgdsh</h2>
+    </div>
+  );
 }

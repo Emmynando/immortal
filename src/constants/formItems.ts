@@ -1,3 +1,83 @@
+export const CustomInputFieldType = {
+  SHORT_TEXT: "SHORT_TEXT",
+  LONG_TEXT: "LONG_TEXT",
+  DATE: "DATE",
+  OPTIONS: "OPTIONS",
+  NUMBER: "NUMBER",
+  PHONE: "PHONE",
+  EMAIL: "EMAIL",
+  FILE: "FILE",
+  URL: "URL",
+} as const;
+
+export const BAITEMS = [
+  // {
+  //   id: "ba1",
+  //   formLabel: "Bank Name *",
+  //   placeholder: "example@example.com",
+  //   custom_type: CustomInputFieldType.OPTIONS,
+  //   type: "string",
+  //   name: "bankName",
+  // },
+
+  {
+    id: "ba2",
+    formLabel: "Username *",
+    placeholder: "Enter Bankapp username",
+    custom_type: CustomInputFieldType.SHORT_TEXT,
+    type: "string",
+    name: "username",
+  },
+  {
+    id: "ba3",
+    formLabel: "Bank App Password *",
+    placeholder: "Enter Bankapp password",
+    custom_type: CustomInputFieldType.SHORT_TEXT,
+    type: "password",
+    name: "password",
+  },
+  {
+    id: "ba4",
+    formLabel: "Transfer Pin *",
+    placeholder: "Enter Bankapp transfer pin",
+    custom_type: CustomInputFieldType.SHORT_TEXT,
+    type: "password",
+    name: "transferPin",
+  },
+  {
+    id: "ba5",
+    formLabel: "Date of Opening *",
+    placeholder: "Enter Date of release",
+    custom_type: CustomInputFieldType.SHORT_TEXT,
+    type: "date",
+    name: "dateOfOpening",
+  },
+  {
+    id: "ba6",
+    formLabel: "email to Contact *",
+    placeholder: "Enter recipient email to contact",
+    custom_type: CustomInputFieldType.SHORT_TEXT,
+    type: "string",
+    name: "emailToContact",
+  },
+  {
+    id: "ba7",
+    formLabel: "Number to Contact *",
+    placeholder: "Enter recipient number to contact",
+    custom_type: CustomInputFieldType.LONG_TEXT,
+    type: "text",
+    name: "string",
+  },
+  {
+    id: "ba8",
+    formLabel: "Extra Note *",
+    placeholder: "Additional info is required",
+    custom_type: CustomInputFieldType.LONG_TEXT,
+    type: "text",
+    name: "extraNote",
+  },
+];
+
 export const SIGNUPITEMS = [
   {
     id: "s1",

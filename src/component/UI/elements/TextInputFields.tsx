@@ -1,9 +1,9 @@
 export interface ITextAreaProps {
   name: string;
   id: string;
-  value: string;
+  value: string | string[];
   onChange: any;
-  error: string;
+  error?: string;
   isValid: boolean;
   required: boolean;
   disabled?: boolean;
@@ -17,14 +17,15 @@ const TextAreaFields = ({
   value,
   onChange,
   error,
-  isValid,
+  // isValid,
   required,
   disabled,
   placeholder,
   className,
 }: ITextAreaProps) => {
+  const isValid = !error;
   return (
-    <div className="space-y-2 bg-red-900">
+    <div className="space-y-2">
       <textarea
         id={id}
         name={name}
@@ -35,7 +36,7 @@ const TextAreaFields = ({
           !isValid
             ? "border border-2 border-red-600"
             : "border border-medium-green focus:border-blue-700"
-        } ${className} block w-full p-2.5 text-sm text-black focus:ring-4 rounded-lg border focus:ring-blue-50`}
+        }  ${className} block w-full p-2.5 text-sm text-black focus:ring-4 rounded-lg border focus:ring-blue-50`}
         placeholder={placeholder}
         // onFocus={handleFocus}
         autoComplete="off"
@@ -44,7 +45,8 @@ const TextAreaFields = ({
         // onBlur={handleFocus}
         // autoSave="false"
       />
-      {!isValid && <p className={`  italic text-red-500 text-xs`}>{error}</p>}
+
+      {!isValid && <p className={`italic text-red-500 text-xs`}>{error}</p>}
     </div>
   );
 };

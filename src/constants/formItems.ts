@@ -56,7 +56,7 @@ export const BAITEMS = [
     id: "ba6",
     formLabel: "email to Contact *",
     placeholder: "Enter recipient email to contact",
-    custom_type: CustomInputFieldType.SHORT_TEXT,
+    custom_type: CustomInputFieldType.LONG_TEXT,
     type: "string",
     name: "emailToContact",
   },
@@ -66,7 +66,7 @@ export const BAITEMS = [
     placeholder: "Enter recipient number to contact",
     custom_type: CustomInputFieldType.LONG_TEXT,
     type: "text",
-    name: "string",
+    name: "numberToContact",
   },
   {
     id: "ba8",

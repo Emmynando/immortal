@@ -4,7 +4,7 @@ export interface InputFieldProps {
   name: string;
   placeholder: string;
   type: string;
-  value: string | number;
+  value: string | number | string[];
   //@ts-ignore
   onChange: any;
   icon?: ReactNode;

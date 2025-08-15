@@ -10,6 +10,8 @@ import {
   validateEmailField,
   validatePhoneField,
 } from "../../../../constants/helpers";
+import MotionComponent from "../../../UI/framer-motion/MotionComp";
+import { AnimatePresence } from "framer-motion";
 
 type BankFormKeys = keyof typeof initialFormData;
 const initialFormData = {
@@ -148,85 +150,89 @@ export default function BankAppCredentials() {
     }
   }
   return (
-    <main className="w-full">
-      <div>
-        <h2>Bank app credentials </h2>
-        <form
-          className="grid md:grid-cols-2 gap-2 space-y-4 w-full"
-          onSubmit={handleEncryptFile}
-        >
-          <div>
-            <label
-              className={`relative block uppercase tracking-wide text-black text-xs mt-3 font-medium ml-2 mb-1`}
-              htmlFor={"bankName"}
-            >
-              Bank Name
-            </label>
-            <select
-              id="bankName"
-              name="bankName"
-              value={selectedBank}
-              onChange={(e) => setSelectedBank(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              required
-            >
-              <option value="">Select a bank</option>
-              {bankOptions}
-            </select>
-          </div>
-          {BAITEMS.map((field) => (
-            <div key={field.id} className="w-full">
+    <AnimatePresence>
+      <main className="w-full">
+        <div>
+          <h2>Bank app credentials </h2>
+          {/* <MotionComponent as="div"> */}
+          <form
+            className="grid md:grid-cols-2 gap-2 space-y-4 w-full"
+            onSubmit={handleEncryptFile}
+          >
+            <div>
               <label
                 className={`relative block uppercase tracking-wide text-black text-xs mt-3 font-medium ml-2 mb-1`}
-                htmlFor={field.name}
+                htmlFor={"bankName"}
               >
-                {field.formLabel}
+                Bank Name
               </label>
-              {field.custom_type === CustomInputFieldType.SHORT_TEXT ? (
-                <InputField
-                  id={field.name}
-                  name={field.name}
-                  type={field.type}
-                  placeholder={field.placeholder}
-                  value={formData[field.name as keyof typeof initialFormData]}
-                  onChange={handleFormChange}
-                  ringColorClass="focus:ring-green-900"
-                  // icon={field.icon}
-                  theme="dark"
-                  error={
-                    touched[field.name as BankFormKeys]
-                      ? errors[field.name as BankFormKeys]
-                      : undefined
-                  }
-                  isValid={!field.name}
-                />
-              ) : (
-                <TextAreaFields
-                  id={field.name}
-                  name={field.name}
-                  placeholder={field.placeholder}
-                  value={formData[field.name as keyof typeof formData]}
-                  // className="w-full h-[4rem]"
-                  onChange={handleTextAreaChange}
-                  error={
-                    touched[field.name as BankFormKeys]
-                      ? errors[field.name as BankFormKeys]
-                      : undefined
-                  }
-                  isValid={!field.name}
-                  required
-                  // ringColorClass="focus:ring-green-900"
-                  // icon={field.icon}
-                />
-              )}
+              <select
+                id="bankName"
+                name="bankName"
+                value={selectedBank}
+                onChange={(e) => setSelectedBank(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                required
+              >
+                <option value="">Select a bank</option>
+                {bankOptions}
+              </select>
             </div>
-          ))}
+            {BAITEMS.map((field) => (
+              <div key={field.id} className="w-full">
+                <label
+                  className={`relative block uppercase tracking-wide text-black text-xs mt-3 font-medium ml-2 mb-1`}
+                  htmlFor={field.name}
+                >
+                  {field.formLabel}
+                </label>
+                {field.custom_type === CustomInputFieldType.SHORT_TEXT ? (
+                  <InputField
+                    id={field.name}
+                    name={field.name}
+                    type={field.type}
+                    placeholder={field.placeholder}
+                    value={formData[field.name as keyof typeof initialFormData]}
+                    onChange={handleFormChange}
+                    ringColorClass="focus:ring-green-900"
+                    // icon={field.icon}
+                    theme="dark"
+                    error={
+                      touched[field.name as BankFormKeys]
+                        ? errors[field.name as BankFormKeys]
+                        : undefined
+                    }
+                    isValid={!field.name}
+                  />
+                ) : (
+                  <TextAreaFields
+                    id={field.name}
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    value={formData[field.name as keyof typeof formData]}
+                    // className="w-full h-[4rem]"
+                    onChange={handleTextAreaChange}
+                    error={
+                      touched[field.name as BankFormKeys]
+                        ? errors[field.name as BankFormKeys]
+                        : undefined
+                    }
+                    isValid={!field.name}
+                    required
+                    // ringColorClass="focus:ring-green-900"
+                    // icon={field.icon}
+                  />
+                )}
+              </div>
+            ))}
 
-          <SubmitButton isLoading={isLoading}>
-            {isLoading ? "encrypting..." : "Encrypt File"}
-          </SubmitButton>
-        </form>
-      </div>
-    </main>
+            <SubmitButton isLoading={isLoading}>
+              {isLoading ? "encrypting..." : "Encrypt File"}
+            </SubmitButton>
+          </form>
+          {/* </MotionComponent> */}
+        </div>
+      </main>
+    </AnimatePresence>
   );
 }

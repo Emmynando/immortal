@@ -1,6 +1,7 @@
+import { motion } from "framer-motion";
 interface SubmitButtonProps {
   isDisabled?: boolean;
-  isLoading: boolean;
+  isLoading?: boolean;
   children: React.ReactNode;
   onClick?: () => void;
   containerclass?: string;
@@ -12,7 +13,7 @@ export default function SubmitButton({
   containerclass,
 }: SubmitButtonProps) {
   return (
-    <button
+    <motion.button
       className={`px-2 rounded-md w-full py-4 font-semibold cursor-pointer ${containerclass} ${
         isLoading
           ? "text-gray-400 bg-[#474752]"
@@ -21,8 +22,9 @@ export default function SubmitButton({
       disabled={isLoading}
       type="submit"
       onClick={onClick}
+      whileTap={{ scale: 0.9 }}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }

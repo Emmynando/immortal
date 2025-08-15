@@ -1,3 +1,5 @@
+import MotionComponent from "../framer-motion/MotionComp";
+
 export interface ITextAreaProps {
   name: string;
   id: string;

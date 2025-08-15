@@ -17,7 +17,7 @@ const LISTITEMS = [
 export default function Sidebar() {
   const [showEncryptprt, setShowEncryptprt] = useState(false);
   return (
-    <main className="flex flex-col justify-between w-[15rem] h-screen bg-[#0C1E35] pb-2">
+    <main className="fixed inset-0 flex flex-col justify-between w-[15rem] h-screen bg-[#0C1E35] pb-2">
       <div className="space-y-8 mt-4 pl-2">
         <div>
           <h1>Logo</h1>

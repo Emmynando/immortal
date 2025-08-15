@@ -1,3 +1,9 @@
+export const generateUniqueReference = (paymentFor: string) => {
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(2, 8);
+  return `${paymentFor}_${timestamp}_${randomString}`;
+};
+
 export const validateEmailField = (
   name: string,
   value: string,

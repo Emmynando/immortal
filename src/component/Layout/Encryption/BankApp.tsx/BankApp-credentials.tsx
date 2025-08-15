@@ -12,10 +12,11 @@ import {
 } from "../../../../constants/helpers";
 import MotionComponent from "../../../UI/framer-motion/MotionComp";
 import { AnimatePresence } from "framer-motion";
+import { generateUniqueReference } from "../../../../constants/helpers";
 
 type BankFormKeys = keyof typeof initialFormData;
 const initialFormData = {
-  bankName: "",
+  // bankName: "",
   username: "",
   password: "",
   transferPin: "",
@@ -27,7 +28,8 @@ const initialFormData = {
 
 export default function BankAppCredentials() {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^\d{9,12}$/;
+  const phoneRegex = /^\d{9,13}$/;
+  const todayDate = new Date();
   const { formData, handleChange, errors, setErrors } =
     useForm(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +39,7 @@ export default function BankAppCredentials() {
   const [nigerianBanks, setNigerianBanks] = useState<
     { name: string; code: string }[]
   >([]);
-  const [selectedBank, setSelectedBank] = useState("");
+  const [bankName, setBankName] = useState<string>("");
   // Fetch banks only once when component mounts
   useEffect(() => {
     const getNigerianBanks = async () => {
@@ -84,10 +86,9 @@ export default function BankAppCredentials() {
       }
     } else if (name === "dateOfOpening") {
       handleChange(event);
-      const today = new Date();
       const selectedDate = new Date(value);
 
-      if (selectedDate <= today) {
+      if (selectedDate <= todayDate) {
         setErrors((prev) => ({
           ...prev,
           dateOfOpening: "Date must be in the future",
@@ -133,15 +134,144 @@ export default function BankAppCredentials() {
 
   async function handleEncryptFile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const selectedDate = new Date(formData.dateOfOpening);
+    const inputedEmail = formData.emailToContact
+      .split(",")
+      .map((email) => email.trim());
+    const inputedPhoneNum = formData.numberToContact
+      .split(",")
+      .map((phone) => phone.trim());
 
-    if (!formData) {
+    // verify email
+    for (const email of inputedEmail) {
+      if (!emailRegex.test(email)) {
+        console.log(`${email} is not a valid email`);
+        return;
+      }
+    }
+
+    const phoneRegex = /^\d{9,13}$/;
+    // verify phone number
+    for (const phoneNum of inputedPhoneNum) {
+      if (
+        phoneNum.startsWith("9") ||
+        phoneNum.startsWith("7") ||
+        (phoneNum.startsWith("8") && phoneNum.length !== 10) ||
+        (phoneNum.startsWith("234") && phoneNum.length !== 13) ||
+        (phoneNum.startsWith("0") && phoneNum.length !== 11) ||
+        !phoneRegex.test(phoneNum)
+      ) {
+        console.log(`${phoneNum} is not a valid phone number`);
+        return;
+      }
+    }
+
+    if (
+      !bankName ||
+      !formData.username ||
+      !formData.password ||
+      formData.transferPin.length !== 4 ||
+      selectedDate <= todayDate
+    ) {
       console.log("invalid formdata");
       return;
     }
 
     try {
       setIsLoading(true);
-      console.log(formData);
+      // step 1
+      // send payment of #50,000 to budpay
+      const budpayPayload = {
+        email: "user@example.com",
+        amount: 50000,
+        currency: "NGN",
+        reference: generateUniqueReference("cbf"),
+        callback_url: `${window.location.origin}/payment/callback`,
+        metadata: {
+          custom_fields: [
+            {
+              display_name: "cbf",
+              variable_name: "cbf",
+              value: JSON.stringify(formData),
+            },
+          ],
+        },
+      };
+      const initiateBudpayPayment = await axios.post(
+        // backend endpoint
+        "/payments/initialize-budpay",
+        budpayPayload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 30000, // 30 seconds timeout
+        }
+      );
+
+      if (!initiateBudpayPayment.data.status) {
+        throw new Error(
+          initiateBudpayPayment.data.message || "Payment initialization failed"
+        );
+      }
+
+      const { reference, authorization_url } = initiateBudpayPayment.data.data;
+      console.log("Payment initialized successfully:", reference);
+      window.location.href = authorization_url;
+
+      // step 2
+      // retrive response and send refrence to backend
+      const verifyPaymentAndSendToBackend = async (
+        reference: string,
+        formData: any
+      ): Promise<void> => {
+        console.log("Verifying payment:", reference);
+        // Verify payment with BudPay
+        const verificationResponse = await axios.get(
+          `/api/payment/budpay/verify/${reference}`,
+          {
+            timeout: 15000, // 15 seconds timeout
+          }
+        );
+
+        if (!verificationResponse.data.status) {
+          throw new Error("Payment verification failed");
+        }
+
+        const paymentData = verificationResponse.data.data;
+        if (paymentData.status !== "success") {
+          throw new Error(`Payment ${paymentData.status}. Please try again.`);
+        }
+        console.log("Payment verified successfully:", paymentData);
+        const backendPayload = {
+          reference: paymentData.reference,
+          amount: paymentData.amount,
+          status: paymentData.status,
+          customer_email: paymentData.customer.email,
+          form_data: formData,
+          verified_at: new Date().toISOString(),
+        };
+
+        const backendResponse = await axios.post(
+          "/api/payment/process-successful-payment",
+          backendPayload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              // 'Authorization': `Bearer ${getAuthToken()}`
+            },
+            timeout: 30000,
+          }
+        );
+        if (!backendResponse.data.success) {
+          throw new Error(
+            backendResponse.data.message || "Backend processing failed"
+          );
+        }
+      };
+
+      console.log("Payment processed successfully in backend");
+
       return;
     } catch (error) {
       console.log(error);
@@ -151,9 +281,9 @@ export default function BankAppCredentials() {
   }
   return (
     <AnimatePresence>
-      <main className="w-full">
-        <div>
-          <h2>Bank app credentials </h2>
+      <main className="w-full pt-2">
+        <div className="">
+          <h2 className="small-header my-2">Bank app credentials </h2>
           {/* <MotionComponent as="div"> */}
           <form
             className="grid md:grid-cols-2 gap-2 space-y-4 w-full"
@@ -169,8 +299,8 @@ export default function BankAppCredentials() {
               <select
                 id="bankName"
                 name="bankName"
-                value={selectedBank}
-                onChange={(e) => setSelectedBank(e.target.value)}
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                 required
               >
@@ -210,7 +340,7 @@ export default function BankAppCredentials() {
                     name={field.name}
                     placeholder={field.placeholder}
                     value={formData[field.name as keyof typeof formData]}
-                    // className="w-full h-[4rem]"
+                    className="!h-[4rem]"
                     onChange={handleTextAreaChange}
                     error={
                       touched[field.name as BankFormKeys]
@@ -226,7 +356,7 @@ export default function BankAppCredentials() {
               </div>
             ))}
 
-            <SubmitButton isLoading={isLoading}>
+            <SubmitButton isLoading={isLoading} containerclass="col-span-2">
               {isLoading ? "encrypting..." : "Encrypt File"}
             </SubmitButton>
           </form>

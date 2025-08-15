@@ -9,7 +9,6 @@ const InputField = ({
   type,
   value,
   onChange,
-  icon,
   theme,
   ringColorClass,
   disabled,

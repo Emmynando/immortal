@@ -22,7 +22,7 @@ export default function EncryptPreview({
       >
         <main className="h-screen flex flex-col items-center justify-center">
           <section className="bg-[#f9ffff] w-[60%] p-2 rounded-md shadow-[inset_0_0_15px_0_rgb(199,199,199)]">
-            <h2 className="mb-4 font-bold">
+            <h2 className="mb-4 small-header">
               Let's Encrypt Your Bank App Login Credentials
             </h2>
             <div className="space-y-2  ">

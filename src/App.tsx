@@ -6,6 +6,7 @@ import HomePage from "./component/Layout/Home";
 import SignUpPage from "./component/UI/Signup";
 import DashboardPage from "./component/Layout/Dashboard";
 import BankAppIndex from "./component/Layout/Encryption/BankApp.tsx/BankAppIndex";
+import { PaymentCallback } from "./component/Layout/Payout/PaymentCallback";
 
 const clientid = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="login" element={<Login />} />
           <Route path="register" element={<SignUpPage />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
           {/* Routes with Sidebar (using MainLayout) */}
           <Route element={<MainLayout />}>
             <Route index element={<HomePage />} />

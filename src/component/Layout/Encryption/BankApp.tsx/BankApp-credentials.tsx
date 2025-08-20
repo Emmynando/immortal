@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, type ChangeEvent } from "react";
 import axios from "axios";
 import { BAITEMS } from "../../../../constants/formItems";
+import { AnimatePresence } from "framer-motion";
 import useForm from "../../../../hooks/useForm";
 import InputField from "../../../UI/elements/InputFiels";
 import { CustomInputFieldType } from "../../../../constants/formItems";
@@ -11,8 +12,8 @@ import {
   validatePhoneField,
 } from "../../../../constants/helpers";
 import MotionComponent from "../../../UI/framer-motion/MotionComp";
-import { AnimatePresence } from "framer-motion";
 import { generateUniqueReference } from "../../../../constants/helpers";
+import { axiosURl } from "../../../../constants/baseURl";
 
 type BankFormKeys = keyof typeof initialFormData;
 const initialFormData = {
@@ -180,105 +181,70 @@ export default function BankAppCredentials() {
     try {
       setIsLoading(true);
       // step 1
-      // send payment of #50,000 to budpay
+      // initiate of #50,000 to budpay from the backend
       const budpayPayload = {
         email: "user@example.com",
         amount: 50000,
         currency: "NGN",
         reference: generateUniqueReference("cbf"),
-        callback_url: `${window.location.origin}/payment/callback`,
+        callback: `${window.location.origin}/payment/callback`,
+        webhook: `${axiosURl}/payments/webhook-budpay`,
         metadata: {
-          custom_fields: [
-            {
-              display_name: "cbf",
-              variable_name: "cbf",
-              value: JSON.stringify(formData),
-            },
-          ],
+          // Send form data for processing
+          formData: "cbf",
+          source: "frontend_form",
         },
       };
+
       const initiateBudpayPayment = await axios.post(
         // backend endpoint
-        "/payments/initialize-budpay",
+        `${axiosURl}/payments/initialize-budpay`,
         budpayPayload,
         {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
           timeout: 30000, // 30 seconds timeout
         }
       );
+      console.log(initiateBudpayPayment.data);
 
-      if (!initiateBudpayPayment.data.status) {
+      if (!initiateBudpayPayment.data.success) {
         throw new Error(
           initiateBudpayPayment.data.message || "Payment initialization failed"
         );
       }
 
-      const { reference, authorization_url } = initiateBudpayPayment.data.data;
-      console.log("Payment initialized successfully:", reference);
+      // Store reference for callback handling
+      localStorage.setItem(
+        "pending_payment_ref",
+        initiateBudpayPayment.data.data.reference
+      );
+
+      const { reference, authorization_url } =
+        initiateBudpayPayment.data.data.data;
+      console.log(
+        "Payment initialized successfully:",
+        reference,
+        authorization_url
+      );
+      // step 2
+      // if payment is successful
+      // redirect to budpay popup and make card payment using the authorization url
+      //  once the backend, confirms the webhook, it will process the rest of action using items sent
+      // items being sent to backend form data, budpay payload
       window.location.href = authorization_url;
 
-      // step 2
-      // retrive response and send refrence to backend
-      const verifyPaymentAndSendToBackend = async (
-        reference: string,
-        formData: any
-      ): Promise<void> => {
-        console.log("Verifying payment:", reference);
-        // Verify payment with BudPay
-        const verificationResponse = await axios.get(
-          `/api/payment/budpay/verify/${reference}`,
-          {
-            timeout: 15000, // 15 seconds timeout
-          }
-        );
-
-        if (!verificationResponse.data.status) {
-          throw new Error("Payment verification failed");
-        }
-
-        const paymentData = verificationResponse.data.data;
-        if (paymentData.status !== "success") {
-          throw new Error(`Payment ${paymentData.status}. Please try again.`);
-        }
-        console.log("Payment verified successfully:", paymentData);
-        const backendPayload = {
-          reference: paymentData.reference,
-          amount: paymentData.amount,
-          status: paymentData.status,
-          customer_email: paymentData.customer.email,
-          form_data: formData,
-          verified_at: new Date().toISOString(),
-        };
-
-        const backendResponse = await axios.post(
-          "/api/payment/process-successful-payment",
-          backendPayload,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              // 'Authorization': `Bearer ${getAuthToken()}`
-            },
-            timeout: 30000,
-          }
-        );
-        if (!backendResponse.data.success) {
-          throw new Error(
-            backendResponse.data.message || "Backend processing failed"
-          );
-        }
-      };
-
-      console.log("Payment processed successfully in backend");
-
-      return;
+      console.log("Payment processed");
     } catch (error) {
       console.log(error);
     } finally {
       setIsLoading(false);
     }
   }
+
+  //     localStorage.setItem("form_data", JSON.stringify(formData));
   return (
     <AnimatePresence>
       <main className="w-full pt-2">

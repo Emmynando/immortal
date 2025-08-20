@@ -63,7 +63,7 @@ export default function SignUpPage() {
         console.log("Error creating user");
         return;
       }
-      navigate("/dashboard", { replace: true });
+      navigate("/login", { replace: true });
     } catch (error) {
       console.log(error);
     } finally {

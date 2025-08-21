@@ -76,10 +76,10 @@ export default function BankAppCredentials() {
     setTouched((prev) => ({ ...prev, [name]: true }));
     if (name === "transferPin") {
       handleChange(event);
-      if (value.length !== 4) {
+      if (value.length !== 4 || isNaN(Number(value))) {
         setErrors((prev) => ({
           ...prev,
-          transferPin: "Transfer Pin must be 4 digits",
+          transferPin: "Transfer Pin must be 4 digits or number",
         }));
       } else {
         // Clear error if valid
@@ -135,6 +135,7 @@ export default function BankAppCredentials() {
 
   async function handleEncryptFile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     const selectedDate = new Date(formData.dateOfOpening);
     const inputedEmail = formData.emailToContact
       .split(",")
@@ -151,17 +152,14 @@ export default function BankAppCredentials() {
       }
     }
 
-    const phoneRegex = /^\d{9,13}$/;
     // verify phone number
     for (const phoneNum of inputedPhoneNum) {
-      if (
-        phoneNum.startsWith("9") ||
-        phoneNum.startsWith("7") ||
-        (phoneNum.startsWith("8") && phoneNum.length !== 10) ||
-        (phoneNum.startsWith("234") && phoneNum.length !== 13) ||
-        (phoneNum.startsWith("0") && phoneNum.length !== 11) ||
-        !phoneRegex.test(phoneNum)
-      ) {
+      const isValidNigerianNumber =
+        (phoneNum.startsWith("0") && phoneNum.length === 11) || // 08123456789
+        (phoneNum.startsWith("234") && phoneNum.length === 13) || // 2348123456789
+        (phoneNum.match(/^[789]\d{9}$/) && phoneNum.length === 10); // 8123456789, 9012345678, 7012345678
+
+      if (!isValidNigerianNumber) {
         console.log(`${phoneNum} is not a valid phone number`);
         return;
       }
@@ -181,18 +179,51 @@ export default function BankAppCredentials() {
     try {
       setIsLoading(true);
       // step 1
+      // send form to endpoint
+      const generatedRef = generateUniqueReference("cbf");
+
+      const formRepsonse = await axios.post(
+        // backend endpoint
+        `${axiosURl}/files/bank-file`,
+        {
+          username: formData.username,
+          password: formData.password,
+          transferPin: formData.transferPin,
+          dateOfOpening: formData.dateOfOpening,
+          extraNote: formData.extraNote,
+          bankName,
+          reference: generatedRef,
+          emailToContact: inputedEmail,
+          numberToContact: inputedPhoneNum,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+          timeout: 30000, // 30 seconds timeout
+        }
+      );
+      console.log(formRepsonse);
+
+      if (!formRepsonse.data.success) {
+        throw new Error("Failed to create file");
+      }
+
+      // step II
       // initiate of #50,000 to budpay from the backend
+      const { fileId, reference: fileReference } = formRepsonse.data;
+      console.log(fileId, fileReference, formRepsonse.data);
+
       const budpayPayload = {
-        email: "user@example.com",
         amount: 50000,
         currency: "NGN",
-        reference: generateUniqueReference("cbf"),
+        reference: fileReference,
         callback: `${window.location.origin}/payment/callback`,
         webhook: `${axiosURl}/payments/webhook-budpay`,
         metadata: {
-          // Send form data for processing
-          formData: "cbf",
-          source: "frontend_form",
+          // Send form id for processing
+          formID: fileId,
         },
       };
 
@@ -208,7 +239,6 @@ export default function BankAppCredentials() {
           timeout: 30000, // 30 seconds timeout
         }
       );
-      console.log(initiateBudpayPayment.data);
 
       if (!initiateBudpayPayment.data.success) {
         throw new Error(
@@ -229,11 +259,10 @@ export default function BankAppCredentials() {
         reference,
         authorization_url
       );
-      // step 2
-      // if payment is successful
+      // step III
+      // if payment initiation is successful
       // redirect to budpay popup and make card payment using the authorization url
-      //  once the backend, confirms the webhook, it will process the rest of action using items sent
-      // items being sent to backend form data, budpay payload
+      //  once the backend, confirms the webhook, it will process the rest of action
       window.location.href = authorization_url;
 
       console.log("Payment processed");
